@@ -1,0 +1,48 @@
+@page "/login"
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<h3>Login</h3>
+
+<input @bind="username" placeholder="Username" />
+<br />
+<input @bind="password" type="password" placeholder="Password" />
+<br />
+<button @onclick="LoginUser">Login</button>
+
+<p>@message</p>
+
+@code {
+    string username;
+    string password;
+    string message;
+
+    async Task LoginUser()
+    {
+        var response = await Http.PostAsJsonAsync("https://localhost:5001/api/auth/login", new
+        {
+            Username = username,
+            Password = password
+        });
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+            message = "Login success";
+
+            // här sparar vi token (sen localStorage)
+            Console.WriteLine(result.token);
+
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            message = "Login failed";
+        }
+    }
+
+    class LoginResponse
+    {
+        public string token { get; set; }
+    }
+}

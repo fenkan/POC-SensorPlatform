@@ -1,0 +1,17 @@
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\bin\Debug\net9.0\SensorPlatform.Application.deps.json
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\bin\Debug\net9.0\SensorPlatform.Application.runtimeconfig.json
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\bin\Debug\net9.0\SensorPlatform.Application.dll
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\bin\Debug\net9.0\SensorPlatform.Application.pdb
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\bin\Debug\net9.0\SensorPlatform.Domain.dll
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\bin\Debug\net9.0\SensorPlatform.Domain.pdb
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\obj\Debug\net9.0\SensorPlatform.Application.csproj.AssemblyReference.cache
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\obj\Debug\net9.0\SensorPlatform.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\obj\Debug\net9.0\SensorPlatform.Application.AssemblyInfoInputs.cache
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\obj\Debug\net9.0\SensorPlatform.Application.AssemblyInfo.cs
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\obj\Debug\net9.0\SensorPlatform.Application.csproj.CoreCompileInputs.cache
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\obj\Debug\net9.0\SensorPl.4E558DCA.Up2Date
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\obj\Debug\net9.0\SensorPlatform.Application.dll
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\obj\Debug\net9.0\refint\SensorPlatform.Application.dll
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\obj\Debug\net9.0\SensorPlatform.Application.pdb
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\obj\Debug\net9.0\SensorPlatform.Application.genruntimeconfig.cache
+C:\Users\fenka\SensorPlatform\SensorPlatform.Application\obj\Debug\net9.0\ref\SensorPlatform.Application.dll

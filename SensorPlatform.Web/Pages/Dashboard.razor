@@ -1,0 +1,77 @@
+@page "/dashboard"
+@inject HttpClient Http
+
+<h3>Sensor Dashboard</h3>
+
+<button class="btn btn-primary mb-3" @onclick="LoadData">
+    Refresh
+</button>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (readings == null || !readings.Any())
+{
+    <p>No data available.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>DeviceId</th>
+                <th>Value</th>
+                <th>Timestamp</th>
+                <th>ReceivedAt</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in readings)
+            {
+                <tr>
+                    <td>@r.DeviceId</td>
+                    <td>@r.Value</td>
+                    <td>@r.Timestamp</td>
+                    <td>@r.ReceivedAt</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<SensorReadingDto>? readings;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+
+        try
+        {
+            // OBS: kräver att du har GET i API: /api/ingest
+            readings = await Http.GetFromJsonAsync<List<SensorReadingDto>>("api/ingest");
+        }
+        catch
+        {
+            // hindrar crash i UI
+            readings = new List<SensorReadingDto>();
+        }
+
+        isLoading = false;
+    }
+
+    public class SensorReadingDto
+    {
+        public int DeviceId { get; set; }
+        public double Value { get; set; }
+        public DateTime Timestamp { get; set; }
+        public DateTime ReceivedAt { get; set; }
+    }
+}
