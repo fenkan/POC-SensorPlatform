@@ -1,6 +1,35 @@
 @Api_HostAddress = http://localhost:5143
+@token = paste-jwt-token-here
 
-GET {{Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Login (demo/demo123)
+POST {{Api_HostAddress}}/api/auth/login
+Content-Type: application/json
 
-###
+{
+	"username": "demo",
+	"password": "demo123"
+}
+
+### Latest measurements (requires JWT)
+GET {{Api_HostAddress}}/api/measurements/latest
+Authorization: Bearer {{token}}
+
+### Sensor list (requires JWT)
+GET {{Api_HostAddress}}/api/measurements/sensors
+Authorization: Bearer {{token}}
+
+### History for one sensor (requires JWT)
+GET {{Api_HostAddress}}/api/measurements/history/sensor-temp-01?take=20
+Authorization: Bearer {{token}}
+
+### Ingest sample (signature must be valid)
+POST {{Api_HostAddress}}/api/ingest
+Content-Type: application/json
+
+{
+	"deviceId": "sensor-temp-01",
+	"value": 22.5,
+	"timestamp": 1760000000,
+	"nonce": "a7d6bb98-a68e-4af8-838b-bf2536ff09a9",
+	"signature": "replace-with-valid-base64-hmac"
+}

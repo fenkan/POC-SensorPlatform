@@ -1,12 +1,6 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using SensorPlatform.Api.Models;
-using SensorPlatform.Application.Data;
-using SensorPlatform.Application.Security;
 using SensorPlatform.Application.Services;
-using SensorPlatform.Domain.Entities;
 
 namespace SensorPlatform.Api.Controllers;
 
@@ -14,70 +8,49 @@ namespace SensorPlatform.Api.Controllers;
 [Route("api/[controller]")]
 public class IngestController : ControllerBase
 {
-    private readonly AppDbContext _db;
-    private readonly SensorService _service;
+    private readonly IngestService _ingestService;
+    private readonly SensorService _sensorService;
 
-    public IngestController(AppDbContext db, SensorService service)
+    public IngestController(IngestService ingestService, SensorService sensorService)
     {
-        _db = db;
-        _service = service;
+        _ingestService = ingestService;
+        _sensorService = sensorService;
     }
 
     // =========================
     // POST: ingest från device
     // =========================
     [HttpPost]
-    public IActionResult Post([FromBody] IngestRequest request)
+    public async Task<IActionResult> Post([FromBody] IngestRequest request, CancellationToken cancellationToken)
     {
-        var device = _db.Devices
-            .FirstOrDefault(d => d.DeviceId == request.DeviceId && d.IsActive);
-
-        if (device == null)
-            return NotFound("Device not found or inactive");
-
-        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-        if (Math.Abs(now - request.Timestamp) > 60)
-            return BadRequest("Stale request (possible replay attack)");
-
-        var payload = JsonSerializer.Serialize(new
-        {
+        var result = await _ingestService.ProcessAsync(
             request.DeviceId,
             request.Value,
-            request.Timestamp
-        });
+            request.Timestamp,
+            request.Nonce,
+            request.Signature,
+            cancellationToken);
 
-        var expectedSignature = HmacHelper.CreateSignature(payload, device.HmacSecret);
-
-        if (!CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(expectedSignature),
-                Encoding.UTF8.GetBytes(request.Signature)))
+        return result.Status switch
         {
-            return Unauthorized("Invalid HMAC signature");
-        }
-
-        var reading = new SensorReading
-        {
-            DeviceId = device.Id,
-            Value = request.Value,
-            Timestamp = DateTimeOffset
-                .FromUnixTimeSeconds(request.Timestamp)
-                .UtcDateTime,
-            ReceivedAt = DateTime.UtcNow
+            IngestStatus.Accepted => Ok(result.Reading),
+            IngestStatus.DeviceNotFound => NotFound(result.Message),
+            IngestStatus.InvalidPayload => BadRequest(result.Message),
+            IngestStatus.InvalidSignature => Unauthorized(result.Message),
+            IngestStatus.StaleTimestamp => BadRequest(result.Message),
+            IngestStatus.ReplayDetected => Conflict(result.Message),
+            IngestStatus.DuplicateData => Conflict(result.Message),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, "Unhandled ingest status")
         };
-
-        _service.Add(reading);
-
-        return Ok(reading);
     }
 
     // =========================
     // GET: dashboard (FIX FÖR 405)
     // =========================
     [HttpGet]
-    public IActionResult Get()
+    public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
-        var data = _service.GetAll();
+        var data = await _sensorService.GetRecentAsync(200, cancellationToken);
         return Ok(data);
     }
 }

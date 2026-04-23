@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Device> Devices => Set<Device>();
     public DbSet<SensorReading> SensorReadings => Set<SensorReading>();
+    public DbSet<IngestMessage> IngestMessages => Set<IngestMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,6 +31,13 @@ public class AppDbContext : DbContext
             .HasForeignKey(r => r.DeviceId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Device -> IngestMessage (1:N)
+        modelBuilder.Entity<Device>()
+            .HasMany(d => d.IngestMessages)
+            .WithOne(m => m.Device)
+            .HasForeignKey(m => m.DeviceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Unique constraint on Username
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Username)
@@ -39,5 +47,13 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Device>()
             .HasIndex(d => d.DeviceId)
             .IsUnique();
+
+        // Used to block replay of already used nonces per device
+        modelBuilder.Entity<IngestMessage>()
+            .HasIndex(m => new { m.DeviceId, m.Nonce })
+            .IsUnique();
+
+        modelBuilder.Entity<IngestMessage>()
+            .HasIndex(m => new { m.DeviceId, m.PayloadHash });
     }
 }

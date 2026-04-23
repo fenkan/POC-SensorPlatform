@@ -73,6 +73,32 @@ namespace SensorPlatform.Application.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "IngestMessages",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    DeviceId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Timestamp = table.Column<long>(type: "INTEGER", nullable: false),
+                    Nonce = table.Column<string>(type: "TEXT", nullable: false),
+                    Signature = table.Column<string>(type: "TEXT", nullable: false),
+                    PayloadHash = table.Column<string>(type: "TEXT", nullable: false),
+                    IsAccepted = table.Column<bool>(type: "INTEGER", nullable: false),
+                    RejectReason = table.Column<string>(type: "TEXT", nullable: true),
+                    ReceivedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IngestMessages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_IngestMessages_Devices_DeviceId",
+                        column: x => x.DeviceId,
+                        principalTable: "Devices",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Devices_DeviceId",
                 table: "Devices",
@@ -90,6 +116,17 @@ namespace SensorPlatform.Application.Migrations
                 column: "DeviceId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_IngestMessages_DeviceId_Nonce",
+                table: "IngestMessages",
+                columns: new[] { "DeviceId", "Nonce" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_IngestMessages_DeviceId_PayloadHash",
+                table: "IngestMessages",
+                columns: new[] { "DeviceId", "PayloadHash" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_Username",
                 table: "Users",
                 column: "Username",
@@ -101,6 +138,9 @@ namespace SensorPlatform.Application.Migrations
         {
             migrationBuilder.DropTable(
                 name: "SensorReadings");
+
+            migrationBuilder.DropTable(
+                name: "IngestMessages");
 
             migrationBuilder.DropTable(
                 name: "Devices");

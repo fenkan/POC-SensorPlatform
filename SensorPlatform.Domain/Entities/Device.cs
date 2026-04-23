@@ -16,5 +16,6 @@ namespace SensorPlatform.Domain.Entities
         // Navigation properties
         public User? User { get; set; }
         public ICollection<SensorReading> Readings { get; set; } = new List<SensorReading>();
+        public ICollection<IngestMessage> IngestMessages { get; set; } = new List<IngestMessage>();
     }
 }

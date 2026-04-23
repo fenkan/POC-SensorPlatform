@@ -86,6 +86,49 @@ namespace SensorPlatform.Application.Migrations
                     b.ToTable("SensorReadings");
                 });
 
+            modelBuilder.Entity("SensorPlatform.Domain.Entities.IngestMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DeviceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsAccepted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Nonce")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RejectReason")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Signature")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Timestamp")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeviceId", "Nonce")
+                        .IsUnique();
+
+                    b.HasIndex("DeviceId", "PayloadHash");
+
+                    b.ToTable("IngestMessages");
+                });
+
             modelBuilder.Entity("SensorPlatform.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -133,8 +176,21 @@ namespace SensorPlatform.Application.Migrations
                     b.Navigation("Device");
                 });
 
+            modelBuilder.Entity("SensorPlatform.Domain.Entities.IngestMessage", b =>
+                {
+                    b.HasOne("SensorPlatform.Domain.Entities.Device", "Device")
+                        .WithMany("IngestMessages")
+                        .HasForeignKey("DeviceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Device");
+                });
+
             modelBuilder.Entity("SensorPlatform.Domain.Entities.Device", b =>
                 {
+                    b.Navigation("IngestMessages");
+
                     b.Navigation("Readings");
                 });
 

@@ -1,6 +1,9 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@inject AuthTokenStore TokenStore
+@inject NavigationManager Nav
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">SensorPlatform.Web</a>
+        <a class="navbar-brand" href="">SensorPlatform</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -15,20 +18,20 @@
             </NavLink>
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            <NavLink class="nav-link" href="login">
+                <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Login
             </NavLink>
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            <NavLink class="nav-link" href="dashboard">
+                <span class="bi bi-graph-up" aria-hidden="true"></span> Dashboard
             </NavLink>
         </div>
         <div class="nav-item px-3">
-    <NavLink class="nav-link" href="dashboard">
-        <span class="bi bi-graph-up" aria-hidden="true"></span> Dashboard
-    </NavLink>
-</div>
+            <button class="btn btn-link nav-link" @onclick="Logout">
+                <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
+            </button>
+        </div>
     </nav>
 </div>
 
@@ -40,5 +43,11 @@
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    private async Task Logout()
+    {
+        await TokenStore.ClearTokenAsync();
+        Nav.NavigateTo("/login");
     }
 }

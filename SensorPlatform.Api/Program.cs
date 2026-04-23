@@ -2,17 +2,55 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.OpenApi.Models;
 using SensorPlatform.Application.Data;
 using SensorPlatform.Application.Services;
+using SensorPlatform.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Services
 builder.Services.AddScoped<SensorService>();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IngestService>();
+builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<AppDataSeeder>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "SensorPlatform API",
+        Version = "v1"
+    });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Bearer token"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=app.db"));
@@ -58,13 +96,27 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazor", policy =>
     {
-        policy.AllowAnyOrigin()
+        var origins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ??
+            ["http://localhost:5190", "https://localhost:7216"];
+
+        policy.WithOrigins(origins)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+
+    var seeder = scope.ServiceProvider.GetRequiredService<AppDataSeeder>();
+    await seeder.SeedAsync();
+}
 
 // Pipeline
 if (app.Environment.IsDevelopment())

@@ -1,0 +1,25 @@
+# Build output
+bin/
+obj/
+
+# SQLite databases (local runtime data)
+*.db
+*.db-shm
+*.db-wal
+
+# User-specific VS/Rider files
+.vs/
+.idea/
+*.user
+*.suo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# .NET secrets and local overrides
+**/appsettings.Local.json
+**/secrets.json
+
+# Publish output
+publish/

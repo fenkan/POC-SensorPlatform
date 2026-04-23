@@ -1,25 +1,35 @@
 @page "/login"
 @inject HttpClient Http
 @inject NavigationManager Nav
+@inject AuthTokenStore TokenStore
 
 <h3>Login</h3>
 
-<input @bind="username" placeholder="Username" />
-<br />
-<input @bind="password" type="password" placeholder="Password" />
-<br />
-<button @onclick="LoginUser">Login</button>
+<p>Use demo account: <strong>demo</strong> / <strong>demo123</strong></p>
+
+<div class="mb-2">
+    <input @bind="username" placeholder="Username" class="form-control" />
+</div>
+<div class="mb-2">
+    <input @bind="password" type="password" placeholder="Password" class="form-control" />
+</div>
+<button class="btn btn-primary" @onclick="LoginUser" disabled="@isLoading">@buttonText</button>
 
 <p>@message</p>
 
 @code {
-    string username;
-    string password;
-    string message;
+    private string username = string.Empty;
+    private string password = string.Empty;
+    private string message = string.Empty;
+    private bool isLoading;
+    private string buttonText => isLoading ? "Logging in..." : "Login";
 
-    async Task LoginUser()
+    private async Task LoginUser()
     {
-        var response = await Http.PostAsJsonAsync("https://localhost:5001/api/auth/login", new
+        isLoading = true;
+        message = string.Empty;
+
+        var response = await Http.PostAsJsonAsync("api/auth/login", new
         {
             Username = username,
             Password = password
@@ -28,21 +38,29 @@
         if (response.IsSuccessStatusCode)
         {
             var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+            if (result is null || string.IsNullOrWhiteSpace(result.Token))
+            {
+                message = "Login failed: no token returned.";
+                isLoading = false;
+                return;
+            }
+
+            await TokenStore.SetTokenAsync(result.Token);
             message = "Login success";
 
-            // här sparar vi token (sen localStorage)
-            Console.WriteLine(result.token);
-
-            Nav.NavigateTo("/");
+            Nav.NavigateTo("/dashboard", forceLoad: false);
         }
         else
         {
             message = "Login failed";
         }
+
+        isLoading = false;
     }
 
-    class LoginResponse
+    private sealed class LoginResponse
     {
-        public string token { get; set; }
+        public string Token { get; set; } = string.Empty;
+        public DateTime ExpiresAtUtc { get; set; }
     }
 }
