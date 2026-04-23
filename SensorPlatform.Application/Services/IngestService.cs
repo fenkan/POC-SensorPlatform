@@ -59,12 +59,14 @@ public class IngestService
         }
 
         var currentUnixTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        // Avvisa gamla/för framtida meddelanden för att minska replay-risk.
         if (Math.Abs(currentUnixTime - timestamp) > MaxClockSkewSeconds)
         {
             await SaveIngestMessageAsync(device.Id, externalDeviceId, timestamp, nonce, signature, value, false, "Stale timestamp", cancellationToken);
             return new IngestResult(IngestStatus.StaleTimestamp, "Stale request timestamp.");
         }
 
+        // Nonce får bara användas en gång per device.
         var replayExists = await _db.IngestMessages
             .AsNoTracking()
             .AnyAsync(m => m.DeviceId == device.Id && m.Nonce == nonce, cancellationToken);
@@ -77,6 +79,7 @@ public class IngestService
         var payload = BuildSignablePayload(externalDeviceId, value, timestamp, nonce);
         var expectedSignature = HmacHelper.CreateSignature(payload, device.HmacSecret);
 
+        // Jämför signaturer i konstant tid för att undvika timing-attacker.
         if (!SecureEquals(expectedSignature, signature))
         {
             await SaveIngestMessageAsync(device.Id, externalDeviceId, timestamp, nonce, signature, value, false, "Invalid signature", cancellationToken);
@@ -88,6 +91,7 @@ public class IngestService
             .AsNoTracking()
             .AnyAsync(r => r.DeviceId == device.Id && r.Timestamp == readingTimestamp && r.Value == value, cancellationToken);
 
+        // Enkel dublettkontroll för identiska mätningar.
         if (duplicateReadingExists)
         {
             await SaveIngestMessageAsync(device.Id, externalDeviceId, timestamp, nonce, signature, value, false, "Duplicate reading", cancellationToken);

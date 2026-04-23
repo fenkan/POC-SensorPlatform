@@ -101,6 +101,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // Skydda sidan genom att kräva token innan data hämtas.
         token = await TokenStore.GetTokenAsync() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(token))
         {
@@ -118,6 +119,7 @@ else
 
         try
         {
+            // Hämta översikt + sensorlista först, därefter historik för vald sensor.
             latestReadings = await GetAuthorizedAsync<List<SensorLatestDto>>("api/measurements/latest") ?? new();
             sensors = await GetAuthorizedAsync<List<SensorDto>>("api/measurements/sensors") ?? new();
 
@@ -167,6 +169,7 @@ else
         using var response = await Http.SendAsync(request);
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
+            // Om token är ogiltig: rensa lokal token och skicka användaren till login.
             await TokenStore.ClearTokenAsync();
             Nav.NavigateTo("/login");
             return default;

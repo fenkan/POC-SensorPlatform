@@ -15,6 +15,7 @@ public class AppDataSeeder
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
+        // Skapa en enkel demoanvändare om den inte finns.
         var user = await _db.Users.SingleOrDefaultAsync(u => u.Username == "demo", cancellationToken);
         if (user is null)
         {
@@ -66,6 +67,7 @@ public class AppDataSeeder
         }
 
         var devices = await _db.Devices.AsNoTracking().ToListAsync(cancellationToken);
+        // Fast seed gör att mockdata blir reproducerbar mellan körningar.
         var rng = new Random(42);
 
         foreach (var device in devices)

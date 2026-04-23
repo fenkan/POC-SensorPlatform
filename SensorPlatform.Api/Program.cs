@@ -8,7 +8,7 @@ using SensorPlatform.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Services
+// Registrera applikationens tjänster för dependency injection.
 builder.Services.AddScoped<SensorService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IngestService>();
@@ -77,6 +77,7 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    // Säkerställ att databasen är uppdaterad och seedad vid uppstart.
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
 
@@ -91,7 +92,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowBlazor");
 
-// viktigt att ha UseAuthentication innan UseAuthorization
+// Viktigt: auth måste ske före authorization.
 app.UseAuthentication();
 app.UseAuthorization();
 

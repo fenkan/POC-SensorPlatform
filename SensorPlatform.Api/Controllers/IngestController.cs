@@ -23,6 +23,7 @@ public class IngestController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] IngestRequest request, CancellationToken cancellationToken)
     {
+        // All säkerhetslogik ligger i tjänstelagret för att hålla controllern tunn.
         var result = await _ingestService.ProcessAsync(
             request.DeviceId,
             request.Value,
@@ -31,6 +32,7 @@ public class IngestController : ControllerBase
             request.Signature,
             cancellationToken);
 
+        // Returnera ett platt svar för att undvika JSON-cykler från EF-navigationer.
         return result.Status switch
         {
             IngestStatus.Accepted => Ok(new
