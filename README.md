@@ -61,7 +61,7 @@ Ingest processing includes:
 ## 5. Local run instructions
 
 Prerequisites:
-- .NET SDK 9.0+
+- .NET SDK 10.0+
 - (Optional) jq and openssl for script-based ingest tests
 
 From repo root:
@@ -132,7 +132,7 @@ VALUE=23.7 \
 ```
 
 Expected:
-- Valid signature accepted (200)
+- HTTP status 200 and JSON response showing accepted readings
 - Data appears in dashboard history
 
 ### D. Ingest invalid signature
