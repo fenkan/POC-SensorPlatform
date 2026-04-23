@@ -9,13 +9,12 @@ namespace SensorPlatform.Api.Controllers;
 public class IngestController : ControllerBase
 {
     private readonly IngestService _ingestService;
-    private readonly SensorService _sensorService;
 
-    public IngestController(IngestService ingestService, SensorService sensorService)
+    public IngestController(IngestService ingestService)
     {
         _ingestService = ingestService;
-        _sensorService = sensorService;
     }
+    
 
     // =========================
     // POST: ingest från device
@@ -50,15 +49,5 @@ public class IngestController : ControllerBase
             IngestStatus.DuplicateData => Conflict(result.Message),
             _ => StatusCode(StatusCodes.Status500InternalServerError, "Unhandled ingest status")
         };
-    }
-
-    // =========================
-    // GET: dashboard (FIX FÖR 405)
-    // =========================
-    [HttpGet]
-    public async Task<IActionResult> Get(CancellationToken cancellationToken)
-    {
-        var data = await _sensorService.GetRecentAsync(200, cancellationToken);
-        return Ok(data);
     }
 }
