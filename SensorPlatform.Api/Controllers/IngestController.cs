@@ -33,7 +33,13 @@ public class IngestController : ControllerBase
 
         return result.Status switch
         {
-            IngestStatus.Accepted => Ok(result.Reading),
+            IngestStatus.Accepted => Ok(new
+            {
+                request.DeviceId,
+                request.Value,
+                Timestamp = DateTimeOffset.FromUnixTimeSeconds(request.Timestamp).UtcDateTime,
+                ReceivedAt = result.Reading?.ReceivedAt ?? DateTime.UtcNow
+            }),
             IngestStatus.DeviceNotFound => NotFound(result.Message),
             IngestStatus.InvalidPayload => BadRequest(result.Message),
             IngestStatus.InvalidSignature => Unauthorized(result.Message),
