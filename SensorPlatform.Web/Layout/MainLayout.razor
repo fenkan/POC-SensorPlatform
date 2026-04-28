@@ -1,4 +1,8 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@inject AuthTokenStore TokenStore
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
 <div class="page theme @ThemeCSSClass">
     <div class="sidebar">
         <NavMenu />
@@ -6,10 +10,22 @@
 
     <main>
         <div class="top-row px-4">
-            <button class="btn btn-primary" @onclick="ToggleTheme">
+            <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleTheme">
                 Toggle Theme
             </button>
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+
+            @if (string.IsNullOrEmpty(token))
+            {
+                <button class="btn btn-primary btn-sm" @onclick='() => Nav.NavigateTo("/login")'>
+                    Login
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-outline-danger btn-sm" @onclick="Logout">
+                    Logout
+                </button>
+            }
         </div>
 
         <article class="content px-4">
@@ -20,11 +36,27 @@
 
 @code {
     private bool _darkModeEnabled = false;
+    private string token = string.Empty;
 
     private string ThemeCSSClass => _darkModeEnabled ? "dark-theme" : "";
 
-    private void ToggleTheme()
+    protected override async Task OnInitializedAsync()
+    {
+        token = await TokenStore.GetTokenAsync() ?? string.Empty;
+        var saved = await JS.InvokeAsync<string?>("localStorage.getItem", "darkMode");
+        _darkModeEnabled = saved == "true";
+    }
+
+    private async Task ToggleTheme()
     {
         _darkModeEnabled = !_darkModeEnabled;
+        await JS.InvokeVoidAsync("localStorage.setItem", "darkMode", _darkModeEnabled.ToString().ToLower());
+    }
+
+    private async Task Logout()
+    {
+        await TokenStore.ClearTokenAsync();
+        token = string.Empty;
+        Nav.NavigateTo("/login");
     }
 }
