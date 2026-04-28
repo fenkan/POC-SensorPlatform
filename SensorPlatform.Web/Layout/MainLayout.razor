@@ -1,11 +1,14 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
+<div class="page theme @ThemeCSSClass">
     <div class="sidebar">
         <NavMenu />
     </div>
 
     <main>
         <div class="top-row px-4">
+            <button class="btn btn-primary" @onclick="ToggleTheme">
+                Toggle Theme
+            </button>
             <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
         </div>
 
@@ -14,3 +17,14 @@
         </article>
     </main>
 </div>
+
+@code {
+    private bool _darkModeEnabled = false;
+
+    private string ThemeCSSClass => _darkModeEnabled ? "dark-theme" : "";
+
+    private void ToggleTheme()
+    {
+        _darkModeEnabled = !_darkModeEnabled;
+    }
+}

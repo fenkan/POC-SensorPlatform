@@ -112,3 +112,18 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+:root {
+    --background-color: #FFFFFF;
+    --text-color: #1F1F39;
+}
+
+.dark-theme {
+    --background-color: #1F1F39;
+    --text-color: #FAFAFB;
+}
+
+.theme {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
