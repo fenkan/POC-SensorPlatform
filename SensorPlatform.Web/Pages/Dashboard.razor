@@ -24,8 +24,20 @@ else if (latestReadings == null || !latestReadings.Any())
 }
 else
 {
-    <h4>Latest per sensor</h4>
+    var filtered = latestReadings.Where(r => r.DeviceId.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || r.DeviceName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+    <input class="form-control mb-3" placeholder="Search by DeviceId or Name..." @bind="searchTerm" 
+    @bind:event="oninput"/>
+    
+    
+    
+    @if (!filtered.Any())
+    {
+    <p class="text-muted">No sensors found.</p>
+}
 
+else
+{
+    <h4>Latest per sensor</h4>
     <table class="table">
         <thead>
             <tr>
@@ -38,7 +50,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var r in latestReadings)
+            @foreach (var r in filtered)
             {
                 <tr>
                     <td>@r.DeviceId</td>
@@ -51,6 +63,8 @@ else
             }
         </tbody>
     </table>
+}
+
 
     <h4>History</h4>
     <div class="mb-3">
@@ -98,6 +112,7 @@ else
     private string? selectedDeviceId;
     private string errorMessage = string.Empty;
     private string token = string.Empty;
+    private string searchTerm = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
