@@ -3,26 +3,84 @@
 @inject NavigationManager Nav
 @inject AuthTokenStore TokenStore
 
-<h3>Login</h3>
+@if (!isRegistering)
+{
+    <h3>Login</h3>
+    
+    <div style="max-width: 400px;">
+        <div class="mb-2">
+            <input @bind="username" placeholder="Username" class="form-control" />
+        </div>
+        <div class="mb-2">
+            <input @bind="password" type="password" placeholder="Password" class="form-control" />
+        </div>
+        <button class="btn btn-primary" @onclick="LoginUser" disabled="@isLoading">
+            @(isLoading ? "Logging in..." : "Login")
+        </button>
 
-<p>Use demo account: <strong>demo</strong> / <strong>demo123</strong></p>
+        <p class="mt-3">
+            Don't have an account?
+            <a href="#" @onclick="ToggleForm" @onclick:preventDefault>Register here</a>
+        </p>
 
-<div class="mb-2">
-    <input @bind="username" placeholder="Username" class="form-control" />
-</div>
-<div class="mb-2">
-    <input @bind="password" type="password" placeholder="Password" class="form-control" />
-</div>
-<button class="btn btn-primary" @onclick="LoginUser" disabled="@isLoading">@buttonText</button>
+        @if (!string.IsNullOrWhiteSpace(message))
+        {
+            <p class="text-danger">@message</p>
+        }
+    </div>
+}
+else
+{
+    <h3>Create Account</h3>
 
-<p>@message</p>
+    <div style="max-width: 400px;">
+        <div class="mb-2">
+            <input @bind="username" placeholder="Username" class="form-control" />
+        </div>
+        <div class="mb-2">
+            <input @bind="email" placeholder="Email" type="email" class="form-control" />
+        </div>
+        <div class="mb-2">
+            <input @bind="password" type="password" placeholder="Password" class="form-control" />
+        </div>
+        <div class="mb-2">
+            <input @bind="confirmPassword" type="password" placeholder="Confirm Password" class="form-control" />
+        </div>
+        <button class="btn btn-primary" @onclick="RegisterUser" disabled="@isLoading">
+            @(isLoading ? "Creating..." : "Create Account")
+        </button>
+
+        <p class="mt-3">
+            Already have an account?
+            <a href="#" @onclick="ToggleForm" @onclick:preventDefault>Login here</a>
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(message))
+        {
+            <p class="@messageClass">@message</p>
+        }
+    </div>
+}
 
 @code {
     private string username = string.Empty;
+    private string email = string.Empty;
     private string password = string.Empty;
+    private string confirmPassword = string.Empty;
     private string message = string.Empty;
+    private string messageClass = "text-danger";
     private bool isLoading;
-    private string buttonText => isLoading ? "Logging in..." : "Login";
+    private bool isRegistering;
+
+    private void ToggleForm()
+    {
+        isRegistering = !isRegistering;
+        username = string.Empty;
+        email = string.Empty;
+        password = string.Empty;
+        confirmPassword = string.Empty;
+        message = string.Empty;
+    }
 
     private async Task LoginUser()
     {
@@ -46,16 +104,63 @@
             }
 
             await TokenStore.SetTokenAsync(result.Token);
-            message = "Login success";
-
             Nav.NavigateTo("/dashboard", forceLoad: false);
         }
         else
         {
-            message = "Login failed";
+            message = "Invalid username or password.";
         }
 
         isLoading = false;
+    }
+
+    private async Task RegisterUser()
+    {
+        message = string.Empty;
+
+        if (password != confirmPassword)
+        {
+            message = "Passwords do not match.";
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/register", new
+            {
+                username,
+                email,
+                password
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                isRegistering = false;
+                username = string.Empty;
+                email = string.Empty;
+                password = string.Empty;
+                confirmPassword = string.Empty;
+                message = "Account created! You can now log in.";
+                messageClass = "text-success";
+                }
+            else
+            {
+                messageClass = "text-danger";
+    if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+    {
+        message = await response.Content.ReadAsStringAsync();
+    }
+    else
+    {
+        message = "Please check your input and try again.";
+    }
+            }
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private sealed class LoginResponse

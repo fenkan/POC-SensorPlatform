@@ -30,4 +30,20 @@ public class AuthController : ControllerBase
         var (token, expiresAtUtc) = _jwtTokenService.CreateToken(user);
         return Ok(new LoginResponse(token, expiresAtUtc));
     }
+
+    [HttpPost("register")]
+public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
+{
+    var (success, error) = await _authService.RegisterAsync(
+        request.Username,
+        request.Email,
+        request.Password,
+        cancellationToken);
+
+    if (!success)
+        return Conflict(error);
+
+    return Ok("User registered successfully.");
+}
+
 }
