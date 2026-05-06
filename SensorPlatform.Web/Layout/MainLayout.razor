@@ -10,22 +10,58 @@
 
     <main>
         <div class="top-row px-4">
-            <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleTheme">
+
+            <!-- CHAT WRAPPER -->
+            <div class="chat-wrapper">
+
+                <button class="btn btn-sm btn-outline-primary"
+                        @onclick="ToggleChat">
+                    🤖
+                </button>
+
+                @if (_chatOpen)
+                {
+                    <div class="chat-panel">
+
+                        <div class="chat-header">
+                            🤖 Chat
+                            <button class="btn btn-sm btn-close"
+                                    @onclick="ToggleChat"></button>
+                        </div>
+
+                        <div class="chat-body">
+                            @foreach (var msg in _messages)
+                            {
+                                <div class="msg">@msg</div>
+                            }
+                        </div>
+
+                        <div class="chat-input">
+                            <input class="form-control"
+                                   @bind="userInput"
+                                   @onkeyup="HandleKey" />
+
+                            <button class="btn btn-primary"
+                                    @onclick="Send">
+                                Send
+                            </button>
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+            <button class="btn btn-outline-secondary btn-sm"
+                    @onclick="ToggleTheme">
                 Toggle Theme
             </button>
 
-            @if (string.IsNullOrEmpty(token))
-            {
-                <button class="btn btn-primary btn-sm" @onclick='() => Nav.NavigateTo("/login")'>
-                    Login
-                </button>
-            }
-            else
-            {
-                <button class="btn btn-outline-danger btn-sm" @onclick="Logout">
-                    Logout
-                </button>
-            }
+            <button class="btn btn-sm @(IsLoggedIn ? "btn-outline-danger" : "btn-primary")"
+                    @onclick="HandleAuth">
+                @(IsLoggedIn ? "Logout" : "Login")
+            </button>
+
         </div>
 
         <article class="content px-4">
@@ -35,28 +71,89 @@
 </div>
 
 @code {
-    private bool _darkModeEnabled = false;
-    private string token = string.Empty;
+    private bool _darkModeEnabled;
+    private string _token = string.Empty;
+    private bool _chatOpen;
 
-    private string ThemeCSSClass => _darkModeEnabled ? "dark-theme" : "";
+    private List<string> _messages = new();
+    private string userInput = string.Empty;
+
+    private bool IsLoggedIn => !string.IsNullOrEmpty(_token);
+    private string ThemeCSSClass => _darkModeEnabled ? "dark-theme" : "light-theme";
 
     protected override async Task OnInitializedAsync()
     {
-        token = await TokenStore.GetTokenAsync() ?? string.Empty;
+        _token = await TokenStore.GetTokenAsync() ?? string.Empty;
         var saved = await JS.InvokeAsync<string?>("localStorage.getItem", "darkMode");
-        _darkModeEnabled = saved == "true";
+        _darkModeEnabled = saved?.ToLower() == "true";
+    }
+
+    private void ToggleChat()
+    {
+        _chatOpen = !_chatOpen;
+    }
+
+    // 💬 SEND MESSAGE + BOT RESPONSE
+    private void Send()
+    {
+        if (string.IsNullOrWhiteSpace(userInput))
+            return;
+
+        _messages.Add("You: " + userInput);
+
+        var reply = GetBotReply(userInput);
+        _messages.Add("Bot: " + reply);
+
+        userInput = string.Empty;
+    }
+
+    // ⌨️ ENTER SUPPORT
+    private void HandleKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            Send();
+        }
+    }
+
+    // 🤖 SIMPLE BOT LOGIC
+    private string GetBotReply(string input)
+    {
+        input = input.ToLower();
+
+        if (input.Contains("hello") || input.Contains("hi"))
+            return "Hello 👋 how can I help?";
+
+        if (input.Contains("sensor"))
+            return "You can check sensors in the dashboard.";
+
+        if (input.Contains("time"))
+            return DateTime.Now.ToString();
+
+        return "I didn't understand that 🤔";
     }
 
     private async Task ToggleTheme()
     {
         _darkModeEnabled = !_darkModeEnabled;
-        await JS.InvokeVoidAsync("localStorage.setItem", "darkMode", _darkModeEnabled.ToString().ToLower());
+        await JS.InvokeVoidAsync(
+            "localStorage.setItem",
+            "darkMode",
+            _darkModeEnabled.ToString().ToLower()
+        );
     }
 
-    private async Task Logout()
+    private async Task HandleAuth()
     {
-        await TokenStore.ClearTokenAsync();
-        token = string.Empty;
-        Nav.NavigateTo("/login");
+        if (IsLoggedIn)
+        {
+            await TokenStore.ClearTokenAsync();
+            _token = string.Empty;
+            Nav.NavigateTo("/login");
+        }
+        else
+        {
+            Nav.NavigateTo("/login");
+        }
     }
 }
