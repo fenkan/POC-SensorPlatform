@@ -14,6 +14,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IngestService>();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<AppDataSeeder>();
+builder.Services.AddSingleton<AiChatService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
