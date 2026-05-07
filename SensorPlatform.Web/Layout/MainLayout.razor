@@ -38,7 +38,10 @@
 
                             @if (_isLoading)
                             {
-                                <div class="msg loading">AI is typing<span class="loading-dots">...</span>
+                                <div class="msg loading">
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
                                 </div>
                             }
                         </div>
@@ -122,6 +125,8 @@
 
     _isLoading = false;
     _messages.Add("AI: " + reply);
+
+    await InvokeAsync(StateHasChanged); // UI upp igen
 }
 
     // ⌨️ ENTER SUPPORT
