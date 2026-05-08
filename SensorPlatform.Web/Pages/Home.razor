@@ -1,12 +1,153 @@
-﻿@page "/"
+@page "/"
+@inject AuthTokenStore TokenStore
+@inject HttpClient Http
+@implements IDisposable
 
-<PageTitle>Home</PageTitle>
+<h1 class="mb-1">SensorPlatform</h1>
+<p class="text-muted mb-4">A local proof of concept for IoT sensor data ingestion and monitoring.</p>
 
-<h1>Sensor Platform POC</h1>
+<div class="row mt-2 g-4 align-items-start">
 
-<p>This demo shows local ingest, authentication, and sensor history.</p>
-<ul>
-	<li>Go to <strong>Login</strong> and sign in with demo credentials.</li>
-	<li>Open <strong>Dashboard</strong> to view latest values and history per sensor.</li>
-	<li>Use API examples in the root README to send signed ingest messages.</li>
-</ul>
+    <!-- Dashboard -->
+    <div class="col-md-4">
+        <div class="card shadow-sm" style="min-height: 220px;">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">Dashboard</h5>
+                <p class="card-text text-muted flex-grow-1">
+                    View the latest sensor readings and browse historical data per device.
+                </p>
+                @if (isLoggedIn)
+                {
+                    <a href="/dashboard" class="btn btn-primary mt-2">Go to Dashboard</a>
+                }
+                else
+                {
+                    <a href="/login" class="btn btn-outline-secondary mt-2">Login to access</a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Ingest -->
+    <div class="col-md-4">
+        <div class="card shadow-sm" style="min-height: 220px;">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    Live Ingest
+                    @if (isLoggedIn)
+                    {
+                        <span class="badge bg-success ms-2" style="font-size:0.65rem;">LIVE</span>
+                    }
+                </h5>
+                <p class="card-text text-muted">Monitor live data ingestion from sensors.</p>
+
+                @if (!isLoggedIn)
+                {
+                    <a href="/login" class="btn btn-outline-secondary mt-2">Login to access</a>
+                }
+                else if (liveReadings == null)
+                {
+                    <p class="text-muted small">Loading...</p>
+                }
+                else if (!liveReadings.Any())
+                {
+                    <p class="text-muted small">No readings yet.</p>
+                }
+                else
+                {
+                    <div class="mt-2" style="max-height:180px; overflow-y:auto;">
+                        <table class="table table-sm mb-0">
+                            <tbody>
+                                @foreach (var r in liveReadings)
+                                {
+                                    <tr>
+                                        <td class="text-muted small">@r.DeviceId</td>
+                                        <td class="small">@r.LatestValue</td>
+                                        <td class="text-muted small">@r.Timestamp.ToString("HH:mm:ss")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted small mt-1 mb-0">Refreshes every 5s</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- About -->
+    <div class="col-md-4">
+        <div class="card shadow-sm" style="min-height: 220px;">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">About</h5>
+                <p class="card-text text-muted flex-grow-1">Learn about the architecture and design decisions behind this platform.</p>
+                <button class="btn btn-outline-dark mt-2" @onclick="ToggleAbout">
+                    @(showAbout ? "Hide" : "Read more")
+                </button>
+            </div>
+
+            @if (showAbout)
+            {
+                <div class="card-footer text-muted small">
+					<p><strong>Overview:</strong> This platform allows IoT devices to securely send sensor data to a central server, where it can be stored, monitored and visualized in real-time.</p>
+                    <p><strong>Stack:</strong> ASP.NET Core 10, Blazor WebAssembly, SQLite, EF Core</p>
+                    <p><strong>Auth:</strong> Users authenticate via JWT. Devices authenticate via HMAC-SHA256 signatures.</p>
+                    <p><strong>Ingest:</strong> Each ingest request is validated against stale timestamps, replay attacks and duplicate readings before being accepted.</p>
+                    <p class="mb-0"><strong>Design:</strong> Transport and domain logic are kept separate so additional transports (e.g. MQTT) can be added without changing core validation.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private bool isLoggedIn;
+    private bool showAbout;
+    private List<LiveReadingDto>? liveReadings;
+    private string token = string.Empty;
+    private Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        token = await TokenStore.GetTokenAsync() ?? string.Empty;
+        isLoggedIn = !string.IsNullOrEmpty(token);
+
+        if (isLoggedIn)
+        {
+            await LoadLiveData();
+            _timer = new Timer(async _ =>
+            {
+                await LoadLiveData();
+                await InvokeAsync(StateHasChanged);
+            }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+        }
+    }
+
+    private async Task LoadLiveData()
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, "api/measurements/latest");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            using var response = await Http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+                liveReadings = await response.Content.ReadFromJsonAsync<List<LiveReadingDto>>();
+        }
+        catch
+        {
+            liveReadings = new();
+        }
+    }
+
+    private void ToggleAbout() => showAbout = !showAbout;
+
+    public void Dispose() => _timer?.Dispose();
+
+    private sealed class LiveReadingDto
+    {
+        public string DeviceId { get; set; } = string.Empty;
+        public double LatestValue { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+}
